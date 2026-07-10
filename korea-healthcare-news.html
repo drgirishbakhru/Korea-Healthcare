@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Korea Healthcare News Dashboard</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #14171f;
+    --sub: #5b6270;
+    --faint: #9aa0aa;
+    --line: #e7e9ee;
+    --bg: #f4f5f8;
+    --card: #ffffff;
+    --accent: #b91c3c;
+    --accent-soft: #fdecef;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px 60px; }
+
+  .topbar {
+    background: linear-gradient(135deg, #14171f 0%, #23283a 55%, #3a1f2b 100%);
+    color: #fff;
+    padding: 28px 20px 22px;
+    margin-bottom: 22px;
+  }
+  .topbar-inner { max-width: 1040px; margin: 0 auto; }
+  .eyebrow {
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: #ffb4c2; font-weight: 700; margin-bottom: 6px;
+  }
+  h1 { font-size: 26px; margin: 0 0 6px; font-weight: 800; letter-spacing: -0.01em; }
+  .sub { color: #c7cad6; font-size: 13.5px; max-width: 640px; line-height: 1.5; }
+
+  .stat-strip {
+    display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap;
+  }
+  .stat {
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 10px; padding: 9px 14px; min-width: 110px;
+  }
+  .stat .num { font-size: 18px; font-weight: 800; line-height: 1.15; }
+  .stat .lbl { font-size: 10.5px; color: #b7bbc8; text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+  .controls { display: flex; gap: 10px; margin: 4px 0 12px; flex-wrap: wrap; align-items: center; }
+  .search-wrap { position: relative; flex: 1; min-width: 240px; }
+  .search-wrap span {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--faint); font-size: 14px; pointer-events: none;
+  }
+  .controls input[type="text"] {
+    width: 100%; padding: 10px 12px 10px 32px; border: 1px solid var(--line);
+    border-radius: 10px; font-size: 14px; background: #fff; color: var(--ink);
+  }
+  .controls input[type="text"]:focus { outline: 2px solid #14171f22; border-color: #b7bcc9; }
+
+  .filter-row { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; align-items: center; }
+  .filter-row .label {
+    font-size: 10.5px; color: var(--faint); font-weight: 800; text-transform: uppercase;
+    letter-spacing: .06em; margin-right: 4px; min-width: 62px;
+  }
+  .filter-btn {
+    padding: 6px 12px; border: 1px solid var(--line); background: #fff; border-radius: 999px;
+    font-size: 12.5px; cursor: pointer; color: #40454f; transition: all .12s ease;
+  }
+  .filter-btn:hover { border-color: #c3c8d1; background: #fafafc; }
+  .filter-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  .count-line { font-size: 12px; color: var(--faint); margin: 10px 2px 14px; display: flex; justify-content: space-between; }
+
+  .grid { display: flex; flex-direction: column; gap: 10px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--card-accent, #c9cdd6);
+    border-radius: 10px; padding: 14px 16px; transition: box-shadow .15s ease, transform .15s ease;
+  }
+  .card:hover { box-shadow: 0 4px 16px rgba(20,23,31,0.08); transform: translateY(-1px); }
+  .card a.title {
+    font-size: 15px; font-weight: 650; color: var(--ink); text-decoration: none; line-height: 1.4;
+  }
+  .card a.title:hover { text-decoration: underline; }
+  .card .snippet { font-size: 13px; color: var(--sub); margin-top: 6px; line-height: 1.55; }
+  .card .row2 { display: flex; gap: 6px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+  .tag {
+    font-size: 10.5px; padding: 3px 9px; border-radius: 999px; font-weight: 700; white-space: nowrap;
+  }
+  .tag.date { background: #f1f2f4; color: var(--sub); font-weight: 600; }
+  .tag.c1 { background: #e7f6ec; color: #1c7a3e; }
+  .tag.c2 { background: #fdf0e3; color: #a15c07; }
+  .tag.c3 { background: #eaf1fd; color: #1e58b0; }
+  .tag.c4 { background: #f7e9f7; color: #8a2d8a; }
+  .tag.c5 { background: #fdeaea; color: #b5342f; }
+  .tag.company { background: var(--accent-soft); color: var(--accent); border: 1px solid #f6c9d1; }
+
+  footer {
+    margin-top: 32px; font-size: 11.5px; color: var(--faint); line-height: 1.7;
+    border-top: 1px solid var(--line); padding-top: 16px;
+  }
+  footer a { color: #6b7280; }
+  .hidden { display: none !important; }
+  .empty-msg { color: var(--faint); font-size: 13px; padding: 40px 0; text-align: center; }
+
+  @media (max-width: 560px) {
+    h1 { font-size: 21px; }
+    .stat { min-width: 90px; padding: 8px 10px; }
+    .filter-row .label { width: 100%; margin-bottom: 2px; }
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="eyebrow">Live news dashboard</div>
+      <h1>🇰🇷 Korea Healthcare News</h1>
+      <div class="sub">Pharma, biotech, medtech &amp; digital health headlines from five Korea-focused sources — merged into one feed, newest first.</div>
+      <div class="stat-strip" id="statStrip"></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="controls">
+      <div class="search-wrap">
+        <span>⌕</span>
+        <input type="text" id="searchBox" placeholder="Search by keyword — AI, vaccine, FDA, biosimilar…" oninput="applyFilters()">
+      </div>
+    </div>
+
+    <div class="filter-row" id="sourceRow">
+      <span class="label">Source</span>
+      <button class="filter-btn active" data-src="all" onclick="setSource('all', this)">All</button>
+      <button class="filter-btn" data-src="BioSpectrum Asia" onclick="setSource('BioSpectrum Asia', this)">BioSpectrum Asia</button>
+      <button class="filter-btn" data-src="BusinessKorea" onclick="setSource('BusinessKorea', this)">BusinessKorea</button>
+      <button class="filter-btn" data-src="Korea Biomedical Review" onclick="setSource('Korea Biomedical Review', this)">Korea Biomedical Review</button>
+      <button class="filter-btn" data-src="Korea Herald Health" onclick="setSource('Korea Herald Health', this)">Korea Herald Health</button>
+      <button class="filter-btn" data-src="The Investor - Bio" onclick="setSource('The Investor - Bio', this)">The Investor (Bio)</button>
+    </div>
+
+    <div class="filter-row" id="companyRow">
+      <span class="label">Watchlist</span>
+      <button class="filter-btn active" data-co="all" onclick="setCompany('all', this)">All companies</button>
+      <button class="filter-btn" data-co="Celltrion" onclick="setCompany('Celltrion', this)">Celltrion</button>
+      <button class="filter-btn" data-co="Samsung Biologics" onclick="setCompany('Samsung Biologics', this)">Samsung Biologics</button>
+      <button class="filter-btn" data-co="Samsung Bioepis" onclick="setCompany('Samsung Bioepis', this)">Samsung Bioepis</button>
+      <button class="filter-btn" data-co="SK bioscience" onclick="setCompany('SK bioscience', this)">SK bioscience</button>
+      <button class="filter-btn" data-co="SK Biopharm" onclick="setCompany('SK Biopharm', this)">SK Biopharm</button>
+      <button class="filter-btn" data-co="Daewoong" onclick="setCompany('Daewoong', this)">Daewoong</button>
+      <button class="filter-btn" data-co="Alteogen" onclick="setCompany('Alteogen', this)">Alteogen</button>
+      <button class="filter-btn" data-co="LigaChem" onclick="setCompany('LigaChem', this)">LigaChem Bio</button>
+      <button class="filter-btn" data-co="ABL Bio" onclick="setCompany('ABL Bio', this)">ABL Bio</button>
+      <button class="filter-btn" data-co="Yuhan" onclick="setCompany('Yuhan', this)">Yuhan</button>
+      <button class="filter-btn" data-co="Hanmi" onclick="setCompany('Hanmi', this)">Hanmi</button>
+      <button class="filter-btn" data-co="HLB" onclick="setCompany('HLB', this)">HLB</button>
+    </div>
+
+    <div class="count-line">
+      <span id="countLine"></span>
+      <span id="updatedLine"></span>
+    </div>
+
+    <div class="grid" id="results"></div>
+    <div class="empty-msg hidden" id="emptyMsg">No articles match that filter. Try clearing the search or picking "All".</div>
+
+    <footer>
+      Sources: <a href="https://www.biospectrumasia.com/category/country/korea" target="_blank" rel="noopener">BioSpectrum Asia – Korea</a> ·
+      <a href="https://www.businesskorea.co.kr/news/articleList.html?sc_sub_section_code=S2N19&view_type=sm" target="_blank" rel="noopener">BusinessKorea – Healthcare &amp; Bio</a> ·
+      <a href="https://www.koreabiomed.com" target="_blank" rel="noopener">Korea Biomedical Review</a> ·
+      <a href="https://www.koreaherald.com/national/health" target="_blank" rel="noopener">Korea Herald – Health</a> ·
+      <a href="https://www.theinvestor.co.kr/bio" target="_blank" rel="noopener">The Investor – Bio</a><br>
+      Refreshed daily. BusinessKorea's category page can lag behind its own homepage snapshot — the refresh cross-checks the homepage's "Healthcare &amp; Bio" block. Pulse (Maeil Business) and Yonhap aren't included — those sites couldn't be reached by the fetch tool used to build this. "Watchlist" chips highlight articles that mention that company by name.
+    </footer>
+  </div>
+
+<script>
+// Article data — replaced by the daily scheduled refresh.
+const ARTICLES = [
+  {source:"BioSpectrum Asia", date:"2026-07-10", title:"Korea's Daewoong Pharma teams up with Waycen to enter AI endoscope software market", url:"https://www.biospectrumasia.com/news/51/27998/koreas-daewoong-pharma-teams-up-with-waycen-to-enter-ai-endoscope-software-market.html", snippet:"South Korea-based Daewoong Pharmaceutical has entered into a distribution agreement with Waycen Inc., a medical AI company."},
+  {source:"BioSpectrum Asia", date:"2026-07-08", title:"Seegene's global clinical study for shaping disease-specific testing standards to begin in Korea", url:"https://www.biospectrumasia.com/news/51/27980/seegenes-global-clinical-study-for-shaping-disease-specific-testing-standards-to-begin-in-korea.html", snippet:"Seegene has announced the launch of the Global Million Clinical Study (GMCS), aiming to evaluate the clinical utility of its testing platform."},
+  {source:"Korea Herald Health", date:"2026-07-08", title:"Violent ER patients could face removal, access limits", url:"https://www.koreaherald.com/article/10802282", snippet:"South Korea moves to allow emergency facilities to remove and restrict future access for patients who assault medical workers."},
+  {source:"BioSpectrum Asia", date:"2026-07-07", title:"Taiwan's Lotus Pharma commences distribution of Uro-Vaxom® in South Korea", url:"https://www.biospectrumasia.com/news/51/27977/taiwans-lotus-pharma-commences-distribution-of-uro-vaxom-in-south-korea.html", snippet:"Lotus Pharmaceutical has announced that its wholly owned subsidiary will distribute Uro-Vaxom in South Korea."},
+  {source:"BioSpectrum Asia", date:"2026-07-07", title:"Korea's Neurophet to supply neurodegenerative brain imaging analysis software to Raffles Medical in Singapore", url:"https://www.biospectrumasia.com/news/51/27958/koreas-neurophet-to-supply-neurodegenerative-brain-imaging-analysis-software-to-raffles-medical-in-singapore.html", snippet:"South Korea-based Neurophet, an AI solution company for brain disorders diagnosis and treatment, expands into Singapore."},
+  {source:"Korea Biomedical Review", date:"2026-07-07", title:"Celltrion's Vegzelma gains preferred status at 2 major US PBMs", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32327", snippet:"Celltrion's biosimilar Vegzelma secures preferred formulary status with two major US pharmacy benefit managers."},
+  {source:"Korea Biomedical Review", date:"2026-07-07", title:"Bundang Jesaeng Hospital introduces AI-based digital diagnostic testing system", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32326", snippet:"The hospital adopts an AI-based digital diagnostic testing system to improve clinical workflows."},
+  {source:"Korea Biomedical Review", date:"2026-07-07", title:"Rising PSA after prostate cancer surgery may signal biochemical recurrence: expert", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32325", snippet:"An expert explains what rising PSA levels after prostatectomy can indicate about recurrence risk."},
+  {source:"Korea Biomedical Review", date:"2026-07-06", title:"MFDS rolls out 60 safety initiatives to boost biopharma, rare disease care", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32316", snippet:"Korea's Ministry of Food and Drug Safety overhauls regulatory frameworks to promote domestic biopharma and rare-disease patient support."},
+  {source:"Korea Biomedical Review", date:"2026-07-06", title:"Asan tops Korean hospitals in Nature Index research rankings", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32319", snippet:"Asan Medical Center ranks first among Korean healthcare institutions in the latest Nature Index research rankings."},
+  {source:"Korea Biomedical Review", date:"2026-07-06", title:"Blood DNA-RNA model improves Alzheimer's detection, new study shows", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32315", snippet:"A Seoul National University Bundang Hospital-led team combines genetic risk and gene activity for better Alzheimer's detection."},
+  {source:"Korea Biomedical Review", date:"2026-07-06", title:"GE HealthCare brings Vivid Pioneer cardiovascular ultrasound system to Korea", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32314", snippet:"GE HealthCare launches its next-generation cardiovascular ultrasound platform, Vivid Pioneer, in Korea."},
+  {source:"BioSpectrum Asia", date:"2026-07-03", title:"South Korea's STARMED secures US FDA clearance for thyroid nodule ablation", url:"https://www.biospectrumasia.com/news/51/27955/south-koreas-starmed-secures-us-fda-clearance-for-thyroid-nodule-ablation.html", snippet:"STARMED, a South Korea-based medical device company specialising in minimally invasive treatment technologies, gains FDA clearance."},
+  {source:"Korea Biomedical Review", date:"2026-07-03", title:"Novo Holdings courts Korea while channeling investments through Singapore", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32309", snippet:"Korea emerges as a growing source of drug-development assets, ranking third globally for clinical-stage pipeline after the US and China."},
+  {source:"Korea Biomedical Review", date:"2026-07-03", title:"Celltrion's operating profit jumps 77% in Q2 on strong biosimilar sales", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32301", snippet:"Celltrion posts Q2 revenue of 1.3 trillion won and operating profit of 430 billion won on strong biosimilar sales."},
+  {source:"Korea Biomedical Review", date:"2026-07-03", title:"Fosun Pharma to invest $27.5 mil. in AriBio after AR1001 licensing deal", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32298", snippet:"China's Fosun Pharma deepens its partnership with AriBio via a strategic equity investment."},
+  {source:"Korea Biomedical Review", date:"2026-07-03", title:"GSK's RSV vaccine Arexvy approved for high-risk adults aged 18-49 in Korea", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32296", snippet:"Korea's MFDS approves an expanded indication for GSK's RSV vaccine Arexvy."},
+  {source:"Korea Biomedical Review", date:"2026-07-02", title:"Platform technologies could drive Korean biotech rebound in H2: analyst", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32289", snippet:"Alteogen, which makes the enzyme letting MSD sell Keytruda as a quick injection instead of a half-hour infusion, is cited as a platform-technology bellwether for a possible H2 biotech rebound."},
+  {source:"Korea Biomedical Review", date:"2026-06-26", title:"Korea's chip fund makes first biotech bet, backing LigaChem with $323 million", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32207", snippet:"LigaChem Biosciences raised 500 billion won from Korea's National Growth Fund, the first life-sciences company to receive direct equity from a fund previously reserved for AI chip designers."},
+  {source:"Korea Biomedical Review", date:"2026-06-15", title:"Huinno, Yuhan expand AI telemetry deployment to Korea University Anam Hospital", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32019", snippet:"Huinno and Yuhan expand their AI-powered cardiac telemetry deployment to Korea University Anam Hospital."},
+  {source:"BusinessKorea", date:"2026-07-02", title:"Amorepacific Ends Laneige Lip Mask Lawsuit", url:"https://www.businesskorea.co.kr/news/articleView.html?idxno=272358", snippet:"The US subsidiary of Amorepacific has been freed from a local consumer lawsuit surrounding product packaging."},
+  {source:"BusinessKorea", date:"2026-07-02", title:"Daewoong Wins Middle East-Africa Envlo Export Deal", url:"https://www.businesskorea.co.kr/news/articleView.html?idxno=272355", snippet:"Daewoong Pharmaceutical signs an agreement with Ashino to supply diabetes drug Envlo to the Middle East and Africa."},
+  {source:"BusinessKorea", date:"2026-07-02", title:"SK bioscience Launches AI-Powered Initiative to Reduce Uncertainty in Vaccine-Development Decisions", url:"https://www.businesskorea.co.kr/news/articleView.html?idxno=272342", snippet:"SK bioscience leads a Research Optimization & Trial Outcome Recommender initiative to reduce vaccine R&D uncertainty."},
+  {source:"Korea Biomedical Review", date:"2026-07-02", title:"SK bioscience to lead Gates Foundation-backed AI platform for vaccine development", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32278", snippet:"SK bioscience will lead a Gates Foundation-funded AI initiative to support vaccine research decisions."},
+  {source:"Korea Biomedical Review", date:"2026-07-02", title:"Daewoong's Envlo enters MENA market in $93 mil. licensing deal with Acino", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32279", snippet:"Daewoong's diabetes drug Envlo enters eight MENA markets via a licensing deal with Acino."},
+  {source:"Korea Biomedical Review", date:"2026-07-02", title:"GLP-1 side effects open a new lane for Korean skin, hair and aesthetics stocks: analyst", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32293", snippet:"An analyst says GLP-1 obesity drug side effects, not Chinese demand recovery, are the next growth catalyst for Korean cosmetics exporters."},
+  {source:"BusinessKorea", date:"2026-07-01", title:"Truxima Becomes First Interchangeable Rituximab Biosimilar", url:"https://www.businesskorea.co.kr/news/articleView.html?idxno=272327", snippet:"Celltrion's Truxima acquires Interchangeability status for Rituximab from the U.S. FDA."},
+  {source:"BioSpectrum Asia", date:"2026-07-01", title:"Korea's Daewoong Pharma inks agreement to launch Enavogliflozin in Middle East for diabetes treatment", url:"https://www.biospectrumasia.com/news/51/27946/koreas-daewoong-pharma-inks-agreement-to-launch-enavogliflozin-in-middle-east-for-diabetes-treatment.html", snippet:"Arcera Life Sciences partners with Daewoong to bring Enavogliflozin to Middle East diabetes patients."},
+  {source:"Korea Biomedical Review", date:"2026-07-01", title:"Astellas launches Vyloy 300mg in Korea to ease gastric cancer drug preparation", url:"https://www.koreabiomed.com/news/articleView.html?idxno=32276", snippet:"Astellas Pharma Korea adds a higher-dose vial option for its targeted gastric cancer therapy Vyloy."},
+  {source:"BioSpectrum Asia", date:"2026-06-30", title:"Anixa Biosciences secures Korean patent for breast cancer vaccine", url:"https://www.biospectrumasia.com/news/51/27942/anixa-biosciences-secures-korean-patent-for-breast-cancer-vaccine.html", snippet:"US-based Anixa Biosciences announces the Korean Ministry of Intellectual Property granted a patent for its breast cancer vaccine."},
+  {source:"Korea Herald Health", date:"2026-06-28", title:"S. Korea's medical overhaul raises concerns over patient access", url:"https://www.koreaherald.com/article/10790582", snippet:"Korea's overhaul of public health insurance reimbursement triggers concern over restricted access to treatments and diagnostics."},
+  {source:"Korea Herald Health", date:"2026-06-27", title:"Cooking fumes may worsen Alzheimer's-related brain changes: study", url:"https://www.koreaherald.com/article/10788239", snippet:"Korean health authorities link cooking fume exposure to neurodegenerative brain changes in an animal study."},
+  {source:"BioSpectrum Asia", date:"2026-06-26", title:"Korea develops AI-based microneedle patch for diabetic wound healing", url:"https://www.biospectrumasia.com/news/51/27925/korea-develops-ai-based-microneedle-patch-for-diabetic-wound-healing.html", snippet:"Researchers develop an AI-based microneedle patch to address slow-healing, infection-prone chronic diabetic wounds."},
+  {source:"Korea Herald Health", date:"2026-06-25", title:"Red meat may not raise cancer risk for Koreans, study suggests", url:"https://www.koreaherald.com/article/10788562", snippet:"A large Korean cohort study finds higher red meat consumption linked to lower gastric cancer mortality among Korean men."},
+  {source:"BioSpectrum Asia", date:"2026-06-25", title:"ATLATL and Samsung Bioepis to accelerate early-stage biotech innovation across Asia-Pacific", url:"https://www.biospectrumasia.com/news/51/27915/atlatl-and-samsung-bioepis-to-accelerate-early-stage-biotech-innovation-across-asia-pacific.html", snippet:"China-based ATLATL Innovation Center partners with Samsung Bioepis on early-stage biotech innovation."},
+  {source:"The Investor - Bio", date:"2026-06-21", title:"Korean biotech eyes deals, partnerships at BIO 2026", url:"https://www.theinvestor.co.kr/article/10782964", snippet:"Samsung Biologics will take part in BIO International Convention for the 14th consecutive year with a 140-square-meter booth."},
+  {source:"BioSpectrum Asia", date:"2026-06-22", title:"Korea's SK Biopharma collaborates with Insilico Medicine for $2.5 B AI-drug discovery deal", url:"https://www.biospectrumasia.com/news/51/27849/koreas-sk-biopharma-collaborates-with-insilico-medicine-for-2-5-b-ai-drug-discovery-deal.html", snippet:"Insilico Medicine, a Hong Kong-based generative AI drug discovery company, signs a $2.5B deal with SK Biopharma."},
+  {source:"Korea Herald Health", date:"2026-06-18", title:"Korean hospitals dominate Newsweek's Asia-Pacific specialty rankings", url:"https://www.koreaherald.com/article/10775316", snippet:"Asan Medical Center, Samsung Medical Center and SNUH lead nine of ten specialties in Newsweek's Asia-Pacific hospital rankings."},
+  {source:"The Investor - Bio", date:"2026-06-18", title:"LG Chem partners with UK's LabGenius on AI cancer drugs", url:"https://www.theinvestor.co.kr/article/10776321", snippet:"LG Chem signs a joint research and license option agreement with LabGenius Therapeutics for AI-designed cancer antibodies."},
+  {source:"BioSpectrum Asia", date:"2026-06-19", title:"MediThinQ and Synovis MCA announce strategic global distribution of 3D surgical visualisation platform", url:"https://www.biospectrumasia.com/news/51/27840/medithinq-and-synovis-mca-announce-strategic-global-distribution-of-3d-surgical-visualisation-platform.html", snippet:"MediThinQ, a South Korea-based surgical visualisation innovator, enters an exclusive multi-year distribution deal."},
+  {source:"BioSpectrum Asia", date:"2026-06-18", title:"Korea's LG AI Research, D&D Pharmatech partner to accelerate oral peptide drug discovery", url:"https://www.biospectrumasia.com/news/51/27834/koreas-lg-ai-research-dd-pharmatech-partner-to-accelerate-oral-peptide-drug-discovery.html", snippet:"LG AI Research signs a master agreement with D&D Pharmatech for next-generation oral peptide drug discovery."},
+  {source:"The Investor - Bio", date:"2026-06-17", title:"ABL Bio secures FDA Fast Track for gastric cancer therapy", url:"https://www.theinvestor.co.kr/article/10774177", snippet:"The FDA grants Fast Track designation to ABL Bio's bispecific antibody candidate Givastomig for gastric and pancreatic cancers."},
+  {source:"The Investor - Bio", date:"2026-06-17", title:"Matica Biotechnology launches open-access manufacturing platform", url:"https://www.theinvestor.co.kr/article/10774164", snippet:"CHA Biotech's US subsidiary launches an open-access manufacturing platform with Cirsium Biosciences as its first customer."},
+  {source:"BioSpectrum Asia", date:"2026-06-17", title:"Korea's AIRS Medical secures investment to accelerate global growth in AI-powered MRI solutions", url:"https://www.biospectrumasia.com/news/51/27815/koreas-airs-medical-secures-investment-to-accelerate-global-growth-in-ai-powered-mri-solutions.html", snippet:"AIRS Medical announces a strategic growth investment from TA Associates."},
+  {source:"Korea Herald Health", date:"2026-06-16", title:"SNUH eyes tech-driven revenue to keep public care afloat", url:"https://www.koreaherald.com/article/10772670", snippet:"Seoul National University Hospital Group pursues tech-driven revenue and AI-powered management to sustain its public health mission."},
+  {source:"The Investor - Bio", date:"2026-06-15", title:"SK Plasma breaks ground on Turkey plasma plant", url:"https://www.theinvestor.co.kr/article/10772148", snippet:"SK Plasma begins construction of a plasma fractionation plant in Turkey with the Turkish Red Crescent."},
+  {source:"BioSpectrum Asia", date:"2026-06-15", title:"South Korea's biotech firm OliX Pharmaceuticals secures KRW 110 B investment", url:"https://www.biospectrumasia.com/news/51/27804/south-koreas-biotech-firm-olix-pharmaceuticals-secures-krw-110-b-investment.html", snippet:"OliX Pharmaceuticals, a developer of RNAi therapeutics, raises approximately KRW 110 billion."},
+  {source:"Korea Herald Health", date:"2026-06-15", title:"Alcohol flush may not raise kidney disease risk, study finds", url:"https://www.koreaherald.com/article/10771914", snippet:"A long-term Korean study finds the ALDH2 rs671 alcohol-flush variant does not raise chronic kidney disease risk."},
+  {source:"The Investor - Bio", date:"2026-06-11", title:"Labor disputes emerge as new risk for Samsung Biologics, Celltrion", url:"https://www.theinvestor.co.kr/article/10769959", snippet:"Korea's two leading biopharma firms, Samsung Biologics and Celltrion, face unfamiliar labor union standoffs amid upbeat earnings."},
+  {source:"BioSpectrum Asia", date:"2026-06-10", title:"Korea's SK bioscience joins forces with global institutions to advance rotavirus vaccine development", url:"https://www.biospectrumasia.com/news/51/27780/koreas-sk-bioscience-joins-forces-with-global-institutions-to-advance-rotavirus-vaccine-development.html", snippet:"SK bioscience partners with global institutions on rotavirus vaccine development."},
+  {source:"The Investor - Bio", date:"2026-06-10", title:"Kolon Life Science wins Canadian patent for cancer virus production", url:"https://www.theinvestor.co.kr/article/10768870", snippet:"Kolon Life Science secures a Canadian patent covering manufacturing of its oncolytic virus candidate KLS-3021."},
+  {source:"The Investor - Bio", date:"2026-06-09", title:"SK Bioscience licenses CDC technology for rotavirus vaccine", url:"https://www.theinvestor.co.kr/article/10767597", snippet:"SK Bioscience signs a licensing deal with the US CDC for injectable inactivated rotavirus vaccine technology."},
+  {source:"BioSpectrum Asia", date:"2026-06-09", title:"Korea establishes Smart Hearing Loop system to assist hearing impaired", url:"https://www.biospectrumasia.com/news/51/27774/korea-establishes-smart-hearing-loop-system-to-assist-hearing-impaired.html", snippet:"Seoul National University Hospital establishes a Smart Hearing Loop system for hearing-impaired patients."},
+  {source:"The Investor - Bio", date:"2026-06-08", title:"SK Biopharmaceuticals opens US innovation hub to support Korean biotech firms", url:"https://www.theinvestor.co.kr/article/10766547", snippet:"SK Biopharmaceuticals opens SK Life Science LinX in New Jersey to help Korean biotech firms expand into the US."},
+  {source:"BioSpectrum Asia", date:"2026-06-05", title:"Korea's Daewoong Pharma partners with China's Chime Biologics for Dupixent biosimilar development", url:"https://www.biospectrumasia.com/news/51/27752/koreas-daewoong-pharma-partners-with-chinas-chime-biologics-for-dupixent-biosimilar-development.html", snippet:"Chime Biologics and Daewoong Pharma partner on Dupixent biosimilar development."},
+  {source:"BioSpectrum Asia", date:"2026-06-04", title:"South Korea to cut new drug approval reviews to 240 days", url:"https://www.biospectrumasia.com/news/51/27739/south-korea-to-cut-new-drug-approval-reviews-to-240-days.html", snippet:"Korea's MFDS establishes a new program to speed up new drug approval reviews."},
+  {source:"The Investor - Bio", date:"2026-06-04", title:"Lotte Biologics to showcase Songdo plant at BIO USA", url:"https://www.theinvestor.co.kr/article/10763894", snippet:"Lotte Biologics will showcase its near-complete Songdo production facility at BIO International Convention 2026."},
+  {source:"BioSpectrum Asia", date:"2026-06-02", title:"Korea-based 3billion launches new genomic newborn screening service 3B-NEO", url:"https://www.biospectrumasia.com/news/51/27727/korea-based-3billion-launches-new-genomic-newborn-screening-service-3b-neo.html", snippet:"3billion, an AI-powered genomic diagnostics company, launches its 3B-NEO newborn screening service."},
+  {source:"BioSpectrum Asia", date:"2026-06-01", title:"Korea's SKIA receives US FDA 510(k) clearance for augmented reality surgical guidance system", url:"https://www.biospectrumasia.com/news/51/27715/koreas-skia-receives-us-fda-510k-clearance-for-augmented-reality-surgical-guidance-system.html", snippet:"SKIA gains FDA 510(k) clearance for its AR surgical guidance system."},
+  {source:"Korea Herald Health", date:"2026-05-27", title:"Wegovy, Mounjaro face tighter controls in Korea", url:"https://www.koreaherald.com/article/10757142", snippet:"Korea moves to tighten access to injectable weight-loss drugs, closing prescription loopholes amid misuse concerns."},
+  {source:"Korea Herald Health", date:"2026-05-27", title:"Medical tourists can get telemedicine in Korea from next year", url:"https://www.koreaherald.com/article/10756446", snippet:"Korea will allow registered medical tourists to receive telemedicine services starting next year."},
+  {source:"Korea Herald Health", date:"2026-05-26", title:"Sweeter diets, stress fuel rise in diabetes among Korean youth", url:"https://www.koreaherald.com/article/10756220", snippet:"Diabetes cases among younger Koreans rise faster than older age groups amid sweeter diets and higher stress."},
+  {source:"BioSpectrum Asia", date:"2026-05-29", title:"SK bioscience secures $230 M from Korea Growth Fund to accelerate Ph 3 development of pneumococcal vaccine", url:"https://www.biospectrumasia.com/news/51/27703/sk-bioscience-secures-230-m-from-korea-growth-fund-to-accelerate-ph-3-development-of-pneumococcal-vaccine.html", snippet:"SK bioscience accelerates Phase 3 development of its pneumococcal vaccine candidate."},
+  {source:"BioSpectrum Asia", date:"2026-05-28", title:"Korea and Indonesia strengthen AI-based healthcare services", url:"https://www.biospectrumasia.com/news/51/27698/korea-and-indonesia-strengthen-ai-based-healthcare-services.html", snippet:"Korea's Ministry of Health and Welfare holds a follow-up conference with Indonesia on AI-based healthcare."}
+];
+
+const SOURCE_COLORS = {
+  "BioSpectrum Asia": "c1",
+  "BusinessKorea": "c2",
+  "Korea Biomedical Review": "c3",
+  "Korea Herald Health": "c4",
+  "The Investor - Bio": "c5"
+};
+const SOURCE_HEX = { c1: "#1c7a3e", c2: "#a15c07", c3: "#1e58b0", c4: "#8a2d8a", c5: "#b5342f" };
+
+const WATCHLIST = ["Celltrion", "Samsung Biologics", "Samsung Bioepis", "SK bioscience", "SK Biopharm", "Daewoong", "Alteogen", "LigaChem", "ABL Bio", "Yuhan", "Hanmi", "HLB"];
+
+let activeSource = "all";
+let activeCompany = "all";
+
+function matchedCompanies(a) {
+  const hay = (a.title + " " + a.snippet);
+  return WATCHLIST.filter(c => hay.toLowerCase().includes(c.toLowerCase()));
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function renderStats() {
+  const dates = ARTICLES.map(a => a.date).sort();
+  const strip = document.getElementById('statStrip');
+  strip.innerHTML = `
+    <div class="stat"><div class="num">${ARTICLES.length}</div><div class="lbl">Articles tracked</div></div>
+    <div class="stat"><div class="num">${Object.keys(SOURCE_COLORS).length}</div><div class="lbl">Sources</div></div>
+    <div class="stat"><div class="num">${WATCHLIST.length}</div><div class="lbl">Watchlist companies</div></div>
+    <div class="stat"><div class="num" style="font-size:14px">${fmtDate(dates[0])} –<br>${fmtDate(dates[dates.length-1])}</div><div class="lbl">Date range</div></div>
+  `;
+  document.getElementById('updatedLine').textContent = `Data as of ${fmtDate(dates[dates.length-1])}`;
+}
+
+function render() {
+  const q = document.getElementById('searchBox').value.trim().toLowerCase();
+
+  let items = ARTICLES.filter(a => {
+    if (activeSource !== "all" && a.source !== activeSource) return false;
+    if (activeCompany !== "all" && !matchedCompanies(a).some(c => c.toLowerCase() === activeCompany.toLowerCase())) return false;
+    const hay = (a.title + " " + a.snippet).toLowerCase();
+    if (q && !hay.includes(q)) return false;
+    return true;
+  });
+
+  items = items.slice().sort((a, b) => b.date.localeCompare(a.date));
+
+  const results = document.getElementById('results');
+  results.innerHTML = "";
+
+  items.forEach(a => {
+    const tagClass = SOURCE_COLORS[a.source] || "c1";
+    const companies = matchedCompanies(a);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.setProperty('--card-accent', SOURCE_HEX[tagClass] || '#c9cdd6');
+    card.innerHTML = `
+      <a class="title" href="${a.url}" target="_blank" rel="noopener">${a.title}</a>
+      <div class="snippet">${a.snippet}</div>
+      <div class="row2">
+        <span class="tag date">${fmtDate(a.date)}</span>
+        <span class="tag ${tagClass}">${a.source}</span>
+        ${companies.map(c => `<span class="tag company">★ ${c}</span>`).join('')}
+      </div>`;
+    results.appendChild(card);
+  });
+
+  document.getElementById('countLine').textContent = `${items.length} article${items.length===1?"":"s"}`;
+  document.getElementById('emptyMsg').classList.toggle('hidden', items.length > 0);
+}
+
+function setSource(src, btn) {
+  activeSource = src;
+  document.querySelectorAll('#sourceRow .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function setCompany(co, btn) {
+  activeCompany = co;
+  document.querySelectorAll('#companyRow .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function applyFilters() { render(); }
+
+renderStats();
+render();
+</script>
+</body>
+</html>
